@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BearBull - Stock Prediction</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            transition: background 0.5s, color 0.5s;
+        }
+        .dark-mode {
+            background-color: #121212;
+            color: white;
+        }
+        .light-mode {
+            background-color: #ffffff;
+            color: black;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: #1e1e1e;
+            color: white;
+            transition: background 0.5s;
+        }
+        .light-mode .header {
+            background-color: #f8f9fa;
+            color: black;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+        }
+        .toggle {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            margin-left: 10px;
+        }
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .4s;
+        }
+        input:checked + .slider {
+            background-color: #007bff;
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            transition: background 0.5s;
+        }
+        .light-mode .container {
+            background-color: #f0f0f0;
+            color: black;
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            width: 85%;
+            margin: 10px auto;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        /* Buttons */
+        button {
+            width: 85%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+            font-weight: 500;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Sections */
+        .section {
+            background: #242424;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+            transition: background 0.5s;
+        }
+        .light-mode .section {
+            background: white;
+            color: black;
+        }
+
+        .section h3 {
+            font-weight: 500;
+        }
+        .section p {
+            margin: 5px 0;
+            font-size: 15px;
+        }
+
+        /* Graph */
+        canvas {
+            margin-top: 20px;
+            max-width: 100%;
+        }
+
+        /* New Section Styles */
+        .additional-section {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #333;
+            color: white;
+        }
+        .light-mode .additional-section {
+            background: #e0e0e0;
+            color: black;
+        }
+    </style>
+</head>
+<body class="dark-mode">
+
+    <!-- Header with Theme Toggle -->
+    <div class="header">
+        <h2>📈 BearBull - Stock Prediction</h2>
+        <div class="toggle-container">
+            <label class="toggle">
+                <input type="checkbox" onchange="toggleTheme()">
+                <span class="slider"></span>
+            </label>
+            <span>🌗</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" id="stockInput" class="search-input" placeholder="Enter stock symbol (e.g., AAPL, TSLA)...">
+        </div>
+        <button onclick="predictStock()">🔍 Predict</button>
+
+        <!-- Stock Information -->
+        <div class="section" id="stockInfo"></div>
+
+        <!-- Candlestick Chart -->
+        <canvas id="stockChart"></canvas>
+
+        <!-- Sensex & Nifty Overview -->
+        <div class="section">
+            <h3>📊 Sensex & Nifty Overview</h3>
+            <p>SENSEX: <span id="sensex">51,234.56</span> 🔼 | 1.5% ↑</p>
+            <p>NIFTY 50: <span id="nifty">15,678.45</span> 🔼 | 1.3% ↑</p>
+            <p>📌 Sensex Historical: 1 Month (⬆️ 3.4%), 6 Months (⬆️ 9.1%), 1 Year (⬆️ 12.5%)</p>
+        </div>
+
+        <!-- Stock Company Details -->
+        <div class="section" id="companyInfo">
+            <h3>🏢 Company Overview</h3>
+            <p>CEO: Tim Cook</p>
+            <p>Founded: 1976</p>
+            <p>Headquarters: Cupertino, CA</p>
+            <p>Revenue: $400B</p>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="additional-section">
+            <h3>📈 Market Insights</h3>
+            <p>Latest News: Tech stocks are on the rise as market sentiment improves.</p>
+            <p>Analyst Ratings: 80% of analysts recommend buying tech stocks.</p>
+        </div>
+    </div>
+
+    <script>
+        let stockChartInstance;
+
+        function predictStock() {
+            let stockSymbol = document.getElementById("stockInput").value.toUpperCase();
+            if (!stockSymbol) {
+                alert("Please enter a stock symbol.");
+                return;
+            }
+
+            document.getElementById("stockInfo").innerHTML = `
+                <h3>📌 ${stockSymbol} Stock Details</h3>
+                <p>Sector: Technology</p>
+                <p>P/E Ratio: 23.4</p>
+                <p>Market Cap: $2.5 Trillion</p>
+                <p>52-Week High: $192.45 | Low: $130.34</p>
+                <p>Dividend Yield: 1.2%</p>
+                <p>Volume: 50M</p>
+            `;
+
+            generateStockChart(stockSymbol);
+        }
+
+        function generateStockChart(stockSymbol) {
+            let ctx = document.getElementById("stockChart").getContext("2d");
+
+            let candles = [];
+            let startPrice = Math.floor(Math.random() * 500) + 100;
+
+            for (let i = 0; i < 30; i++) {
+                let open = startPrice + Math.floor(Math.random() * 10 - 5);
+                let close = open + Math.floor(Math.random() * 10 - 5);
+                let high = Math.max(open, close) + Math.floor(Math.random() * 5);
+                let low = Math.min(open, close) - Math.floor(Math.random() * 5);
+                candles.push({ x: i, o: open, h: high, l: low, c: close });
+                startPrice = close;
+            }
+
+            if (stockChartInstance) stockChartInstance.destroy();
+
+            stockChartInstance = new Chart(ctx, {
+                type: "candlestick",
+                data: { datasets: [{ label: `${stockSymbol} Price`, data: candles }] },
+                options: { responsive: true, scales: { x: { type: "linear" }, y: { beginAtZero: false } } }
+            });
+        }
+
+        function toggleTheme() {
+            let body = document.body;
+            body.classList.toggle("dark-mode");
+            body.classList.toggle("light-mode");
+        }
+    </script>
+
+</body>
+</html>
